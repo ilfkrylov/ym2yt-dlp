@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "YM2YT-DLP",
+  "version": "0.1",
+  "description": "Generate yt-dlp commands for Yandex Music",
+  "permissions": ["activeTab", "clipboardWrite", "scripting"],
+  "host_permissions": ["https://music.yandex.ru/*"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
