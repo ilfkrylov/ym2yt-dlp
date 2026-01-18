@@ -3,51 +3,132 @@
 <head>
     <meta charset="utf-8">
     <style>
+        :root {
+          --bg: #ffffff;
+          --panel: #f5f6f8;
+          --border: #dcdfe4;
+          --primary: #4f7cff;
+          --primary-hover: #3f6be0;
+          --text: #1f2937;
+          --muted: #6b7280;
+        }
+
         body {
-          font-family: sans-serif;
-          width: 380px;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+          width: 400px;
+          margin: 0;
+          padding: 10px;
+          background: var(--bg);
+          color: var(--text);
         }
-        .track {
+
+        h3 {
+          margin: 0 0 8px 0;
+          font-size: 15px;
+        }
+
+        .panel {
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+
+        .panel-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--muted);
+          margin-bottom: 6px;
+          text-transform: uppercase;
+        }
+
+        .options label {
           display: flex;
-          gap: 6px;
           align-items: center;
-          margin-bottom: 4px;
-        }
-        .track span {
+          gap: 6px;
           font-size: 13px;
         }
+
         .controls {
           display: flex;
           gap: 6px;
           margin-bottom: 8px;
         }
-        .options {
-          margin: 8px 0;
-          font-size: 13px;
+
+        button {
+          font-size: 12px;
+          padding: 5px 8px;
+          border-radius: 6px;
+          border: 1px solid var(--border);
+          background: #fff;
+          cursor: pointer;
         }
+
+        button:hover {
+          background: #eef0f4;
+        }
+
+        button.primary {
+          width: 100%;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 8px;
+          background: var(--primary);
+          border: none;
+          color: #fff;
+        }
+
+        button.primary:hover {
+          background: var(--primary-hover);
+        }
+
+        .track {
+          display: flex;
+          gap: 6px;
+          align-items: center;
+          padding: 3px 0;
+        }
+
+        .track span {
+          font-size: 13px;
+          line-height: 1.2;
+        }
+
+        #tracks {
+          max-height: 220px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+
     </style>
 </head>
 <body>
 
 <h3>Yandex Music → yt-dlp</h3>
 
-<div class="controls">
-    <button id="selectAll">Select all</button>
-    <button id="unselectAll">Unselect all</button>
+<div class="panel">
+    <div class="panel-title">Options</div>
+    <div class="options">
+        <label>
+            <input type="checkbox" id="noId">
+            Remove track ID from filename
+        </label>
+    </div>
 </div>
 
-<div class="options">
-    <label>
-        <input type="checkbox" id="noId">
-        Remove track ID from filename
-    </label>
+<div class="panel">
+    <div class="panel-title">Tracks</div>
+
+    <div class="controls">
+        <button id="selectAll">Select all</button>
+        <button id="unselectAll">Unselect all</button>
+    </div>
+
+    <div id="tracks"></div>
 </div>
 
-<div id="tracks"></div>
-
-<hr>
-
-<button id="copySelected">Copy command</button>
+<button id="copySelected" class="primary">Copy command</button>
 
 <script src="popup.js"></script>
 </body>
