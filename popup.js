@@ -4,32 +4,48 @@ async function getTracks() {
   const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     func: () => {
-      const links = Array.from(document.querySelectorAll('a[href*="/track/"]'));
       const re = /^\/album\/\d+\/track\/\d+$/;
+      const tracks = [];
 
-      const urls = new Set();
-      for (const a of links) {
+      document.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
-        if (re.test(href)) {
-          urls.add(new URL(href, location.origin).href);
-        }
+        if (!re.test(href)) return;
+
+        const span = a.querySelector('span');
+        const title = span ? span.textContent.trim() : href;
+
+        tracks.push({
+          url: new URL(href, location.origin).href,
+          title
+        });
+      });
+
+      // одиночный трек
+      if (tracks.length === 0 && location.pathname.includes('/track/')) {
+        const title =
+          document.querySelector('h1 span')?.textContent.trim()
+          || location.href;
+
+        tracks.push({
+          url: location.href,
+          title
+        });
       }
 
-      // если это одиночный трек
-      if (urls.size === 0 && location.pathname.includes('/track/')) {
-        urls.add(location.href);
-      }
-
-      return Array.from(urls);
+      return tracks;
     }
   });
 
   return result;
 }
 
-function buildCommand(urls) {
+function buildCommand(urls, removeId) {
+  const outputOpt = removeId
+    ? '-o "%(artist)s - %(track)s.%(ext)s" '
+    : '';
+
   return (
-    'yt-dlp --cookies-from-browser firefox \\\n' +
+    `yt-dlp --cookies-from-browser firefox ${outputOpt}\\\n` +
     urls.map(u => `"${u}"`).join(' \\\n')
   );
 }
@@ -38,23 +54,36 @@ function buildCommand(urls) {
   const tracks = await getTracks();
   const container = document.getElementById('tracks');
 
-  tracks.forEach((url, i) => {
+  tracks.forEach(({ url, title }) => {
     const div = document.createElement('div');
     div.className = 'track';
     div.innerHTML = `
       <input type="checkbox" checked data-url="${url}">
-      <span>${url}</span>
+      <span>${title}</span>
     `;
     container.appendChild(div);
   });
 
-  document.getElementById('copySelected').onclick = () => {
-    const urls = [...document.querySelectorAll('input:checked')]
-      .map(i => i.dataset.url);
-    navigator.clipboard.writeText(buildCommand(urls));
+  document.getElementById('selectAll').onclick = () => {
+    document.querySelectorAll('#tracks input[type=checkbox]')
+      .forEach(cb => cb.checked = true);
   };
 
-  document.getElementById('copyAll').onclick = () => {
-    navigator.clipboard.writeText(buildCommand(tracks));
+  document.getElementById('unselectAll').onclick = () => {
+    document.querySelectorAll('#tracks input[type=checkbox]')
+      .forEach(cb => cb.checked = false);
+  };
+
+  document.getElementById('copySelected').onclick = () => {
+    const removeId = document.getElementById('noId').checked;
+
+    const urls = [...document.querySelectorAll('#tracks input:checked')]
+      .map(cb => cb.dataset.url);
+
+    if (urls.length === 0) return;
+
+    navigator.clipboard.writeText(
+      buildCommand(urls, removeId)
+    );
   };
 })();
