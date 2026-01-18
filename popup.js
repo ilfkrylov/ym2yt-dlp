@@ -8,20 +8,20 @@ async function getTracks() {
       const tracks = [];
 
       const main = document.querySelector('main');
-      if (!main) return tracks;
+      if (main) {
+        main.querySelectorAll('a[href]').forEach(a => {
+          const href = a.getAttribute('href');
+          if (!re.test(href)) return;
 
-      main.querySelectorAll('a[href]').forEach(a => {
-        const href = a.getAttribute('href');
-        if (!re.test(href)) return;
+          const span = a.querySelector('span');
+          const title = span ? span.textContent.trim() : href;
 
-        const span = a.querySelector('span');
-        const title = span ? span.textContent.trim() : href;
-
-        tracks.push({
-          url: new URL(href, location.origin).href,
-          title
+          tracks.push({
+            url: new URL(href, location.origin).href,
+            title
+          });
         });
-      });
+      }
 
       // одиночный трек
       if (tracks.length === 0 && location.pathname.includes('/track/')) {
@@ -42,13 +42,19 @@ async function getTracks() {
   return result;
 }
 
-function buildCommand(urls, removeId) {
-  const outputOpt = removeId
-    ? '-o "%(artist)s - %(track)s.%(ext)s" '
-    : '';
+function buildCommand(urls, options) {
+  const parts = ['yt-dlp'];
+
+  if (options.useCookies) {
+    parts.push('--cookies-from-browser firefox');
+  }
+
+  if (options.removeId) {
+    parts.push('-o "%(artist)s - %(track)s.%(ext)s"');
+  }
 
   return (
-    `yt-dlp --cookies-from-browser firefox ${outputOpt}\\\n` +
+    parts.join(' ') + ' \\\n' +
     urls.map(u => `"${u}"`).join(' \\\n')
   );
 }
@@ -78,15 +84,18 @@ function buildCommand(urls, removeId) {
   };
 
   document.getElementById('copySelected').onclick = () => {
-    const removeId = document.getElementById('noId').checked;
-
     const urls = [...document.querySelectorAll('#tracks input:checked')]
       .map(cb => cb.dataset.url);
 
     if (urls.length === 0) return;
 
+    const options = {
+      removeId: document.getElementById('noId').checked,
+      useCookies: document.getElementById('useCookies').checked
+    };
+
     navigator.clipboard.writeText(
-      buildCommand(urls, removeId)
+      buildCommand(urls, options)
     );
   };
 })();
