@@ -7,7 +7,10 @@ async function getTracks() {
       const re = /^\/album\/\d+\/track\/\d+$/;
       const tracks = [];
 
-      document.querySelectorAll('a[href]').forEach(a => {
+      const main = document.querySelector('main');
+      if (!main) return tracks;
+
+      main.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
         if (!re.test(href)) return;
 
