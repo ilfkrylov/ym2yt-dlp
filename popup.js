@@ -42,26 +42,44 @@ async function getTracks() {
   return result;
 }
 
+function quoteArg(value) {
+  return `"${String(value).replaceAll('"', '\\"')}"`;
+}
+
 function buildCommand(urls, options) {
   const parts = ['yt-dlp'];
+
+  if (options.yandexToken) {
+    parts.push('--extractor-args', quoteArg(`yandexmusic:token=${options.yandexToken}`));
+  }
 
   if (options.useCookies) {
     parts.push('--cookies-from-browser firefox');
   }
 
   if (options.removeId) {
-    parts.push('-o "%(artist)s - %(track)s.%(ext)s"');
+    parts.push('-o', quoteArg('%(artist)s - %(track)s.%(ext)s'));
   }
 
-  return (
-    parts.join(' ') + ' \\\n' +
-    urls.map(u => `"${u}"`).join(' \\\n')
-  );
+  return parts
+    .concat(urls.map(quoteArg))
+    .join(' ');
 }
 
 (async () => {
   const tracks = await getTracks();
   const container = document.getElementById('tracks');
+  const tokenInput = document.getElementById('yandexToken');
+  const { yandexMusicToken = '' } = await chrome.storage.session.get('yandexMusicToken');
+
+  chrome.storage.local.remove('yandexMusicToken');
+
+  tokenInput.value = yandexMusicToken;
+  tokenInput.addEventListener('input', () => {
+    chrome.storage.session.set({
+      yandexMusicToken: tokenInput.value.trim()
+    });
+  });
 
   tracks.forEach(({ url, title }) => {
     const div = document.createElement('div');
@@ -91,7 +109,8 @@ function buildCommand(urls, options) {
 
     const options = {
       removeId: document.getElementById('noId').checked,
-      useCookies: document.getElementById('useCookies').checked
+      useCookies: document.getElementById('useCookies').checked,
+      yandexToken: tokenInput.value.trim()
     };
 
     navigator.clipboard.writeText(

@@ -45,6 +45,27 @@ h3 {
   font-size: 13px;
 }
 
+.options .field {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.options .field span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.options .field input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 6px 8px;
+  width: 100%;
+}
+
 .controls {
   display: flex;
   gap: 6px;
