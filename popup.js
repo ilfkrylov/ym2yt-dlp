@@ -67,19 +67,63 @@ function buildCommand(urls, options) {
 }
 
 (async () => {
+  const COPY_BUTTON_TEXT = 'Copy command';
+  const COPIED_BUTTON_TEXT = 'Copied';
+  const CLOSE_DELAY_MS = 1000;
+  const CLOSE_ANIMATION_MS = 160;
+
   const tracks = await getTracks();
   const container = document.getElementById('tracks');
   const tokenInput = document.getElementById('yandexToken');
-  const { yandexMusicToken = '' } = await chrome.storage.session.get('yandexMusicToken');
+  const noIdInput = document.getElementById('noId');
+  const useCookiesInput = document.getElementById('useCookies');
+  const copyButton = document.getElementById('copySelected');
+  let closeTimer = null;
+  const {
+    yandexMusicToken = '',
+    removeTrackId = false,
+    useFirefoxCookies = false
+  } = await chrome.storage.session.get([
+    'yandexMusicToken',
+    'removeTrackId',
+    'useFirefoxCookies'
+  ]);
 
   chrome.storage.local.remove('yandexMusicToken');
 
   tokenInput.value = yandexMusicToken;
-  tokenInput.addEventListener('input', () => {
+  noIdInput.checked = removeTrackId;
+  useCookiesInput.checked = useFirefoxCookies;
+
+  function clearCloseTimer() {
+    if (closeTimer === null) return;
+
+    clearTimeout(closeTimer);
+    closeTimer = null;
+  }
+
+  function resetCopyState() {
+    clearCloseTimer();
+    document.body.classList.remove('closing');
+    copyButton.textContent = COPY_BUTTON_TEXT;
+  }
+
+  function saveOptions() {
     chrome.storage.session.set({
-      yandexMusicToken: tokenInput.value.trim()
+      yandexMusicToken: tokenInput.value.trim(),
+      removeTrackId: noIdInput.checked,
+      useFirefoxCookies: useCookiesInput.checked
     });
-  });
+  }
+
+  function handleFormChange() {
+    resetCopyState();
+    saveOptions();
+  }
+
+  tokenInput.addEventListener('input', handleFormChange);
+  noIdInput.addEventListener('change', handleFormChange);
+  useCookiesInput.addEventListener('change', handleFormChange);
 
   tracks.forEach(({ url, title }) => {
     const div = document.createElement('div');
@@ -88,33 +132,45 @@ function buildCommand(urls, options) {
       <input type="checkbox" checked data-url="${url}">
       <span>${title}</span>
     `;
+    div.querySelector('input').addEventListener('change', resetCopyState);
     container.appendChild(div);
   });
 
   document.getElementById('selectAll').onclick = () => {
     document.querySelectorAll('#tracks input[type=checkbox]')
       .forEach(cb => cb.checked = true);
+    resetCopyState();
   };
 
   document.getElementById('unselectAll').onclick = () => {
     document.querySelectorAll('#tracks input[type=checkbox]')
       .forEach(cb => cb.checked = false);
+    resetCopyState();
   };
 
-  document.getElementById('copySelected').onclick = () => {
+  copyButton.onclick = async () => {
     const urls = [...document.querySelectorAll('#tracks input:checked')]
       .map(cb => cb.dataset.url);
 
     if (urls.length === 0) return;
 
     const options = {
-      removeId: document.getElementById('noId').checked,
-      useCookies: document.getElementById('useCookies').checked,
+      removeId: noIdInput.checked,
+      useCookies: useCookiesInput.checked,
       yandexToken: tokenInput.value.trim()
     };
 
-    navigator.clipboard.writeText(
+    await navigator.clipboard.writeText(
       buildCommand(urls, options)
     );
+
+    copyButton.textContent = COPIED_BUTTON_TEXT;
+    clearCloseTimer();
+    closeTimer = setTimeout(() => {
+      document.body.classList.add('closing');
+      closeTimer = setTimeout(() => {
+        window.close();
+      }, CLOSE_ANIMATION_MS);
+    }, CLOSE_DELAY_MS);
   };
 })();

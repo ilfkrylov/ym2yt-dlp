@@ -15,6 +15,14 @@ body {
   padding: 10px;
   background: var(--bg);
   color: var(--text);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+body.closing {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 h3 {
